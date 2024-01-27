@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 
 namespace LargeNumbers {
     struct LargeNumber {
@@ -13,22 +14,28 @@ namespace LargeNumbers {
         char sign;
 
         LargeNumber();
+        void removeZeros();
+        std::string toString() const;
 
-        LargeNumber operator-();
+        friend std::ostream& operator<<(std::ostream&, const LargeNumber&);
 
-        LargeNumber operator+(const LargeNumber& other);
-        LargeNumber operator-(const LargeNumber& other);
-        LargeNumber operator*(const LargeNumber& other);
-        LargeNumber operator/(const LargeNumber& other);
+        LargeNumber operator-() const;
 
-        bool operator>(const LargeNumber& other);
-        bool operator<(const LargeNumber& other);
-        bool operator==(const LargeNumber& other);
-        bool operator>=(const LargeNumber& other);
-        bool operator<=(const LargeNumber& other);
-        bool operator!=(const LargeNumber& other);
+        LargeNumber operator+(const LargeNumber&) const;
+        LargeNumber operator-(const LargeNumber&) const;
+        LargeNumber operator*(const LargeNumber&) const;
+        LargeNumber operator/(const LargeNumber&) const;
 
+        bool operator>(const LargeNumber&) const;
+        bool operator<(const LargeNumber&) const;
+        bool operator==(const LargeNumber&) const;
+        bool operator>=(const LargeNumber&) const;
+        bool operator<=(const LargeNumber&) const;
+        bool operator!=(const LargeNumber&) const;
     };
 
-    LargeNumber& operator ""_LN(const char*);
+    namespace literals {
+        LargeNumber operator ""_LN(const char*, size_t);
+        LargeNumber operator ""_LN(long double);
+    }
 }
