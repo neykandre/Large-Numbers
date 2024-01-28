@@ -3,14 +3,14 @@
 
 #endif
 
+#include <iostream>
 #include <vector>
 #include <string>
-#include <iostream>
 
 namespace LargeNumbers {
     struct LargeNumber {
         std::vector<int> significand;
-        long long offset;
+        long long exponent;
         char sign;
 
         LargeNumber();

@@ -1,14 +1,15 @@
 #include <iostream>
-#include <string>
+
 #include "LargeNumbers.h"
 
 using namespace LargeNumbers::literals;
 
 int main() {
-    LargeNumbers::LargeNumber a = "-01300.11523000"_LN;
-    LargeNumbers::LargeNumber b = "-0"_LN;
-    long double a1 = -1300.11523;
-    long double b1 = -0;
-    std::cout << a - b << std::endl;
-    std::cout << a1 - b1 << std::endl;
+    long double a1 = -12123.115;
+    long double b1 = 1.123123123;
+    LargeNumbers::LargeNumber a = LargeNumbers::literals::operator ""_LN(a1);
+    LargeNumbers::LargeNumber b = LargeNumbers::literals::operator ""_LN(b1);
+    LargeNumbers::LargeNumber res = a * b;
+    std::cout << res << std::endl;
+    std::cout << a1 * b1 << std::endl;
 }

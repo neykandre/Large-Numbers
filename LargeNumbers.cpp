@@ -1,19 +1,19 @@
+#include <iostream>
 #include <vector>
 #include <string>
-#include <iostream>
-#include "LargeNumbers.h"
-#include <algorithm>
 
-#define VECTOR_ELEM_MOD 10
+#include "LargeNumbers.h"
+
+#define NUM_SYSTEM 10
 
 LargeNumbers::LargeNumber::LargeNumber() {
     sign = 1;
-    offset = 1;
-    significand = std::vector<int>(1, 0);
+    exponent = 0;
+    significand = std::vector<int>();
 }
 
 LargeNumbers::LargeNumber LargeNumbers::literals::operator ""_LN(const char *line, size_t size) {
-    LargeNumbers::LargeNumber res = LargeNumber();
+    LargeNumbers::LargeNumber res;
     int start;
 
     if (line[0] == '-') {
@@ -24,10 +24,10 @@ LargeNumbers::LargeNumber LargeNumbers::literals::operator ""_LN(const char *lin
         start = 0;
     }
 
-    res.offset = size - start;
+    res.exponent = size - start - 1;
     for (int i = size - 1; i >= start; --i) {
         if (line[i] == '.') {
-            res.offset = i - start;
+            res.exponent = i - start - 1;
         } else if (isdigit(line[i])) {
             res.significand.push_back(line[i] - '0');
         } else {
@@ -41,7 +41,7 @@ LargeNumbers::LargeNumber LargeNumbers::literals::operator ""_LN(const char *lin
 //    for (int i = size - 1; i >= start; i -= 4) {
 //        for (int j = i; j >= start && j > i - 4; --j) {
 //            if (line[j] == '.') {
-//                res.offset = j - start;
+//                res.exponent = j - start;
 //            }
 //            else if (isdigit(line[j])){
 //                int addNum = line[j] - '0';
@@ -69,13 +69,18 @@ LargeNumbers::LargeNumber LargeNumbers::literals::operator ""_LN(long double ldN
 }
 
 void LargeNumbers::LargeNumber::removeZeros() {
-    while (significand.size() > 1 && significand.front() == 0) {
+    while (!significand.empty() && significand.back() == 0) {
+        significand.pop_back();
+        exponent--;
+    }
+
+    while (!significand.empty() && significand.front() == 0) {
         significand.erase(significand.begin());
     }
 
-    while (significand.size() > 1 && significand.back() == 0) {
-        significand.pop_back();
-        offset--;
+    if (significand.empty()) {
+        exponent = 0;
+        sign = 1;
     }
 }
 
@@ -91,22 +96,19 @@ std::string LargeNumbers::LargeNumber::toString() const {
         line.push_back('-');
     }
 
-    if (offset <= 0) {
-        line.push_back('0');
-        line.push_back('.');
-        for (int i = 0; i < -offset; ++i) {
-            line.push_back('0');
-        }
-        for (int i = significand.size() - 1; i >= 0; --i) {
-            line.push_back(significand[i] + '0');
+    if (exponent < 0) {
+        line.append("0.");
+        line.append(std::string(-exponent - 1, '0'));
+        for (long long i = significand.size() - 1; i >= 0; --i) {
+            line.append(std::to_string(significand[i]));
         }
     } else {
-        for (int i = 0; i < offset; ++i) {
-            line.push_back(significand[significand.size() - 1 - i] + '0');
+        for (long long i = 0; i < exponent + 1; ++i) {
+            line.append(std::to_string(significand[significand.size() - 1 - i]));
         }
         line.push_back('.');
-        for (int i = offset; i < significand.size(); ++i) {
-            line.push_back(significand[significand.size() - 1 - i] + '0');
+        for (long long i = exponent + 1; i < significand.size(); ++i) {
+            line.append(std::to_string(significand[significand.size() - 1 - i]));
         }
     }
     return line;
@@ -116,7 +118,7 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator-() const {
     LargeNumbers::LargeNumber res;
     res.sign = -sign;
     res.significand = significand;
-    res.offset = offset;
+    res.exponent = exponent;
     return res;
 }
 
@@ -125,19 +127,19 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator+(const LargeNumber
         return *this - (-other);
     }
 
-    long long firstOffset = offset;
-    long long secondOffset = other.offset;
+    long long firstExp = exponent;
+    long long secondExp = other.exponent;
     std::vector<int> first(significand);
     std::vector<int> second(other.significand);
-    int maxOffset = std::max(offset, other.offset);
+    long long maxExp = std::max(exponent, other.exponent);
 
-    while (firstOffset < maxOffset) {
+    while (firstExp < maxExp) {
         first.push_back(0);
-        firstOffset++;
+        firstExp++;
     }
-    while (secondOffset < maxOffset) {
+    while (secondExp < maxExp) {
         second.push_back(0);
-        secondOffset++;
+        secondExp++;
     }
     size_t maxSize = std::max(first.size(), second.size());
     while (first.size() < maxSize) {
@@ -150,13 +152,13 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator+(const LargeNumber
     size_t resSize = maxSize + 1;
     LargeNumbers::LargeNumber res;
     res.sign = sign;
-    res.offset = maxOffset + 1;
+    res.exponent = maxExp + 1;
     res.significand = std::vector<int> (resSize, 0);
 
     for (size_t i = 0; i < maxSize; i++) {
         res.significand[i] += first[i] + second[i];
-        res.significand[i + 1] += res.significand[i] / 10;
-        res.significand[i] %= 10;
+        res.significand[i + 1] += res.significand[i] / NUM_SYSTEM;
+        res.significand[i] %= NUM_SYSTEM;
     }
     res.removeZeros();
     return res;
@@ -173,19 +175,19 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator-(const LargeNumber
         return -(other - *this);
     }
 
-    long long firstOffset = offset;
-    long long secondOffset = other.offset;
+    long long firstExp = exponent;
+    long long secondExp = other.exponent;
     std::vector<int> first(significand);
     std::vector<int> second(other.significand);
-    int maxOffset = std::max(offset, other.offset);
+    long long maxExp = std::max(exponent, other.exponent);
 
-    while (firstOffset < maxOffset) {
+    while (firstExp < maxExp) {
         first.push_back(0);
-        firstOffset++;
+        firstExp++;
     }
-    while (secondOffset < maxOffset) {
+    while (secondExp < maxExp) {
         second.push_back(0);
-        secondOffset++;
+        secondExp++;
     }
     size_t maxSize = std::max(first.size(), second.size());
     while (first.size() < maxSize) {
@@ -198,14 +200,14 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator-(const LargeNumber
     size_t resSize = maxSize;
     LargeNumbers::LargeNumber res;
     res.sign = 1;
-    res.offset = maxOffset;
+    res.exponent = maxExp;
     res.significand = std::vector<int> (resSize, 0);
 
     for (size_t i = 0; i < maxSize; ++i) {
         res.significand[i] = first[i] - second[i];
         if (res.significand[i] < 0) {
             first[i + 1]--;
-            res.significand[i] += 10;
+            res.significand[i] += NUM_SYSTEM;
         }
     }
 
@@ -214,7 +216,22 @@ LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator-(const LargeNumber
 }
 
 LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator*(const LargeNumbers::LargeNumber &other) const {
-    return LargeNumbers::LargeNumber();
+    LargeNumbers::LargeNumber res;
+    res.sign = sign * other.sign;
+    res.exponent = exponent + other.exponent + 1;
+    size_t resSize = significand.size() + other.significand.size();
+    res.significand = std::vector<int> (resSize, 0);
+
+    for (size_t i = 0; i < significand.size(); ++i) {
+        for (size_t j = 0; j < other.significand.size(); ++j) {
+            res.significand[i + j] += significand[i] * other.significand[j];
+            res.significand[i + j + 1] += res.significand[i + j] / NUM_SYSTEM;
+            res.significand[i + j] %= NUM_SYSTEM;
+        }
+    }
+
+    res.removeZeros();
+    return res;
 }
 
 LargeNumbers::LargeNumber LargeNumbers::LargeNumber::operator/(const LargeNumbers::LargeNumber &other) const {
@@ -234,8 +251,8 @@ bool LargeNumbers::LargeNumber::operator>(const LargeNumbers::LargeNumber &other
         return !(significand.size() == 1 && significand[0] == 0);
     }
 
-    if (offset != other.offset) {
-        return offset > other.offset;
+    if (exponent != other.exponent) {
+        return exponent > other.exponent;
     }
 
     size_t i = 0;
