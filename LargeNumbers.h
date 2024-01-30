@@ -7,35 +7,43 @@
 #include <vector>
 #include <string>
 
+typedef long long base;
+
 namespace LargeNumbers {
-    struct LargeNumber {
-        std::vector<int> significand;
+    class LargeNumber {
+    public:
+        LargeNumber();
+
+        explicit LargeNumber(const long double &);
+
+        std::vector<base> significand;
         long long exponent;
         char sign;
 
-        LargeNumber();
         void removeZeros();
+
         std::string toString() const;
 
-        friend std::ostream& operator<<(std::ostream&, const LargeNumber&);
+        friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
         LargeNumber operator-() const;
 
-        LargeNumber operator+(const LargeNumber&) const;
-        LargeNumber operator-(const LargeNumber&) const;
-        LargeNumber operator*(const LargeNumber&) const;
-        LargeNumber operator/(const LargeNumber&) const;
+        LargeNumber operator+(const LargeNumber &) const;
 
-        bool operator>(const LargeNumber&) const;
-        bool operator<(const LargeNumber&) const;
-        bool operator==(const LargeNumber&) const;
-        bool operator>=(const LargeNumber&) const;
-        bool operator<=(const LargeNumber&) const;
-        bool operator!=(const LargeNumber&) const;
+        LargeNumber operator-(const LargeNumber &) const;
+
+        LargeNumber operator*(const LargeNumber &) const;
+
+        LargeNumber operator/(const LargeNumber &) const;
+
+        bool operator>(const LargeNumber &) const;
+
+        std::strong_ordering operator<=>(const LargeNumber &) const = default;
     };
 
     namespace literals {
-        LargeNumber operator ""_LN(const char*, size_t);
+        LargeNumber operator ""_LN(const char *, size_t);
+
         LargeNumber operator ""_LN(long double);
     }
 }
