@@ -7,22 +7,30 @@
 #include <vector>
 #include <string>
 
-typedef long long base;
+typedef long long int base;
 
 namespace LargeNumbers {
     class LargeNumber {
-    public:
-        LargeNumber();
-
-        explicit LargeNumber(const long double &);
-
+    private:
         std::vector<base> significand;
         long long exponent;
         char sign;
 
         void removeZeros();
 
+        bool isEqZero() const;
+
+        LargeNumber inverse(long long) const;
+
+    public:
+
+        LargeNumber();
+
+        explicit LargeNumber(const char *);
+
         std::string toString() const;
+
+        void setPrec(const long long &);
 
         friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
@@ -38,12 +46,18 @@ namespace LargeNumbers {
 
         bool operator>(const LargeNumber &) const;
 
-        std::strong_ordering operator<=>(const LargeNumber &) const = default;
+        bool operator<(const LargeNumber &) const;
+
+        bool operator==(const LargeNumber &) const;
+
+        bool operator>=(const LargeNumber &) const;
+
+        bool operator<=(const LargeNumber &) const;
+
+        bool operator!=(const LargeNumber &) const;
     };
 
     namespace literals {
-        LargeNumber operator ""_LN(const char *, size_t);
-
-        LargeNumber operator ""_LN(long double);
+        LargeNumber operator ""_LN(const char *);
     }
 }

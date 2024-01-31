@@ -6,32 +6,12 @@
 #include "LargeNumbers.h"
 
 #define NUM_SYSTEM 10
+#define DEFAULT_PREC 10
 
 typedef std::complex<double> complex_t;
+using namespace LargeNumbers::literals;
 
 namespace helping {
-    bool checkString(const char *line, size_t size) {
-        long long dotCount = 0;
-        for (long long i = 0; i < size; i++) {
-            if (!isdigit(line[i])) {
-                if (line[i] != '.') {
-                    return false;
-                }
-                dotCount++;
-            }
-        }
-        if (dotCount > 1) {
-            return false;
-        }
-        return true;
-    }
-
-    void removeEndZeros(const char *line, size_t &size) {
-        while (size != 0 && line[size - 1] == '0') {
-            size--;
-        }
-    }
-
     void fft(std::vector<complex_t> &a, bool invert) {
         long long size = a.size();
         if (size > 1) {
@@ -67,45 +47,71 @@ namespace LargeNumbers {
         significand = std::vector<base>(1, 0);
     }
 
-    LargeNumber::LargeNumber(const long double &ldNum) {
-        *this = literals::operator ""_LN(ldNum);
-    }
+    LargeNumber::LargeNumber(const char *line) {
+        size_t size = std::string(line).size();
 
-    LargeNumber literals::operator ""_LN(const char *line, size_t size) {
-        helping::removeEndZeros(line, size);
-
-        LargeNumber res;
+        sign = 1;
         int start = 0;
 
-        if (!isdigit(line[0])) {
+        if (line[0] == '-') {
+            sign = -1;
             start++;
-            if (line[0] == '-') {
-                res.sign = -1;
-            } else if (line[0] != '+') {
-                return {};
+        }
+
+        exponent = size - start - 1;
+        for (int i = size - 1; i >= start; --i) {
+            if (isdigit(line[i])) {
+                significand.push_back(line[i] - '0');
+            } else {
+                exponent = i - start - 1;
             }
         }
 
-        if (helping::checkString(line + start, size - start)) {
-            res.exponent = size - start - 1;
-            for (int i = size - 1; i >= start; --i) {
-                if (isdigit(line[i])) {
-                    res.significand.push_back(line[i] - '0');
-                } else {
-                    res.exponent = i - start - 1;
-                }
-            }
+        removeZeros();
+    }
 
-            res.removeZeros();
-            return res;
+
+    bool LargeNumber::isEqZero() const {
+        return *this == 0_LN || *this == -0_LN;
+    }
+
+    LargeNumber LargeNumber::inverse(long long prec) const {
+        if (prec < 0) {
+            prec = 0;
         }
+        if (isEqZero()) {
+            throw std::invalid_argument("Dividing by 0");
+        }
+        if (exponent != -1) {
+            throw std::invalid_argument("Not matching number representation to inverting");
+        }
+
+        LargeNumber num = 1_LN;
+        LargeNumber denom = *this;
+
+        LargeNumber res;
+        res.sign = sign;
+        res.significand.clear();
+        while (res.significand.size() <= prec) {
+            int curDig = 0;
+            while (denom < num) {
+                curDig++;
+                num = num - denom;
+            }
+            res.significand.push_back(curDig);
+            num.exponent++;
+        }
+        std::reverse(res.significand.begin(), res.significand.end());
+        res.exponent = 0;
+        return res;
     }
 
-    LargeNumber literals::operator ""_LN(long double ldNum) {
-        std::string strNum = std::to_string(ldNum);
-        return literals::operator ""_LN(strNum.c_str(), strNum.length());
+    void LargeNumber::setPrec(const long long int &prec) {
+        long long newSize = exponent + 1 + prec;
+        std::reverse(significand.begin(), significand.end());
+        significand.resize(newSize);
+        std::reverse(significand.begin(), significand.end());
     }
-
 
     void LargeNumber::removeZeros() {
         while (significand.size() > 1 && significand.back() == 0) {
@@ -116,6 +122,10 @@ namespace LargeNumbers {
         while (significand.size() > 1 && significand.front() == 0) {
             significand.erase(significand.begin());
         }
+    }
+
+    LargeNumber literals::operator ""_LN(const char *line) {
+        return LargeNumber(line);
     }
 
     std::ostream &operator<<(std::ostream &stream, const LargeNumber &a) {
@@ -137,12 +147,16 @@ namespace LargeNumbers {
                 line.append(std::to_string(significand[i]));
             }
         } else {
-            for (long long i = size - 1; i >= size - exponent - 1; --i) {
-                line.append(std::to_string(significand[i]));
-            }
-            line.push_back('.');
-            for (long long i = size - exponent - 2; i >= 0; --i) {
-                line.append(std::to_string(significand[i]));
+            for (long long i = size - 1; i >= std::min(0LL, size - exponent - 1); --i) {
+                if (i == size - exponent - 2) {
+                    line.push_back('.');
+                }
+                if (i >= 0) {
+                    line.append(std::to_string(significand[i]));
+                }
+                else {
+                    line.push_back('0');
+                }
             }
         }
         return line;
@@ -168,7 +182,7 @@ namespace LargeNumbers {
         long long firstMin = firstExp - firstSize + 1;
         long long secondMin = secondExp - secondSize + 1;
 
-        long long resSize = std::max(firstExp, secondExp) - std::min(firstMin, secondMin);
+        long long resSize = std::max(firstExp, secondExp) + 1 - std::min(firstMin, secondMin);
 
         LargeNumber res;
         res.sign = sign;
@@ -211,7 +225,7 @@ namespace LargeNumbers {
         long long firstMin = firstExp - firstSize + 1;
         long long secondMin = secondExp - secondSize + 1;
 
-        long long resSize = std::max(firstExp, secondExp) - std::min(firstMin, secondMin);
+        long long resSize = std::max(firstExp, secondExp) + 1 - std::min(firstMin, secondMin);
 
         LargeNumber res;
         res.sign = 1;
@@ -237,8 +251,7 @@ namespace LargeNumbers {
     }
 
     LargeNumber LargeNumber::operator*(const LargeNumber &other) const {
-        if (*this == LargeNumber(0) || other == LargeNumber(0) ||
-            *this == -LargeNumber(0) || other == -LargeNumber(0)) {
+        if (isEqZero() || other.isEqZero()) {
             return {};
         }
         long long firstSize = significand.size();
@@ -282,7 +295,19 @@ namespace LargeNumbers {
     }
 
     LargeNumber LargeNumber::operator/(const LargeNumber &other) const {
-        return LargeNumber();
+        if (other.isEqZero()) {
+            throw std::invalid_argument("Dividing by 0");
+        }
+
+        LargeNumber num = *this;
+        LargeNumber denom = other;
+
+        denom.exponent = -1;
+        num.exponent = exponent - (other.exponent - denom.exponent);
+
+        LargeNumber res = num * denom.inverse(DEFAULT_PREC + num.exponent);
+        res.setPrec(DEFAULT_PREC);
+        return res;
     }
 
     bool LargeNumber::operator>(const LargeNumber &other) const {
@@ -313,5 +338,25 @@ namespace LargeNumbers {
         }
 
         return thisSize > otherSize;
+    }
+
+    bool LargeNumbers::LargeNumber::operator<(const LargeNumbers::LargeNumber &other) const {
+        return other > *this;
+    }
+
+    bool LargeNumbers::LargeNumber::operator==(const LargeNumbers::LargeNumber &other) const {
+        return !(*this > other || *this < other);
+    }
+
+    bool LargeNumbers::LargeNumber::operator>=(const LargeNumbers::LargeNumber &other) const {
+        return !(*this < other);
+    }
+
+    bool LargeNumbers::LargeNumber::operator<=(const LargeNumbers::LargeNumber &other) const {
+        return !(*this > other);
+    }
+
+    bool LargeNumbers::LargeNumber::operator!=(const LargeNumbers::LargeNumber &other) const {
+        return !(*this == other);
     }
 }

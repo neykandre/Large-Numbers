@@ -5,10 +5,19 @@
 using namespace LargeNumbers::literals;
 
 int main() {
-    long double a1 = 012.34567;
-    long double b1 = -140.077;
-    LargeNumbers::LargeNumber a = operator ""_LN(a1);
-    LargeNumbers::LargeNumber b = operator ""_LN(b1);
-    std::cout << a1 * b1 << std::endl;
+    LargeNumbers::LargeNumber a = 998244353.998244353_LN;
+    LargeNumbers::LargeNumber b = 0.00006789012340000_LN;
+
+    std::cout << a << std::endl;
+    std::cout << b << std::endl;
+    std::cout << (a > b) << std::endl;
+    std::cout << (a < b) << std::endl;
+    std::cout << (a == b) << std::endl;
+    std::cout << (a != b) << std::endl;
+    std::cout << (a >= b) << std::endl;
+    std::cout << (a <= b) << std::endl;
+    std::cout << a + b << std::endl;
+    std::cout << a - b << std::endl;
     std::cout << a * b << std::endl;
+    std::cout << a / b << std::endl;
 }
