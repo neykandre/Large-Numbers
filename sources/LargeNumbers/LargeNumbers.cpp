@@ -3,6 +3,7 @@
 #include <string>
 #include <complex>
 
+#include "MathFunctions.h"
 #include "LargeNumbers.h"
 
 #define NUM_SYSTEM 10
@@ -10,35 +11,6 @@
 
 typedef std::complex<double> complex_t;
 using namespace LargeNumbers::literals;
-
-namespace helping {
-    void fft(std::vector<complex_t> &a, bool invert) {
-        long long size = a.size();
-        if (size > 1) {
-            std::vector<complex_t> a0(size / 2);
-            std::vector<complex_t> a1(size / 2);
-            for (int i = 0, j = 0; i < size; i += 2, ++j) {
-                a0[j] = a[i];
-                a1[j] = a[i + 1];
-            }
-            fft(a0, invert);
-            fft(a1, invert);
-
-            double ang = 2 * acos(-1) / size * (invert ? -1 : 1);
-            complex_t w(1);
-            complex_t wn(std::polar(1., ang));
-            for (int i = 0; i < size / 2; ++i) {
-                a[i] = a0[i] + w * a1[i];
-                a[i + size / 2] = a0[i] - w * a1[i];
-                if (invert) {
-                    a[i] /= 2;
-                    a[i + size / 2] /= 2;
-                }
-                w *= wn;
-            }
-        }
-    }
-}
 
 namespace LargeNumbers {
     LargeNumber::LargeNumber() {
@@ -69,7 +41,6 @@ namespace LargeNumbers {
 
         removeZeros();
     }
-
 
     bool LargeNumber::isEqZero() const {
         return *this == 0_LN || *this == -0_LN;
@@ -106,7 +77,7 @@ namespace LargeNumbers {
         return res;
     }
 
-    void LargeNumber::setPrec(const long long int &prec) {
+    void LargeNumber::setPrec(long long prec) {
         long long newSize = exponent + 1 + prec;
         std::reverse(significand.begin(), significand.end());
         significand.resize(newSize);
@@ -153,8 +124,7 @@ namespace LargeNumbers {
                 }
                 if (i >= 0) {
                     line.append(std::to_string(significand[i]));
-                }
-                else {
+                } else {
                     line.push_back('0');
                 }
             }
@@ -272,18 +242,19 @@ namespace LargeNumbers {
         fb.resize(n);
         res.exponent = n / 2 - (firstSize - exponent) + n / 2 - (secondSize - other.exponent) + 1;
 
-        helping::fft(fa, false);
-        helping::fft(fb, false);
+        MyMath::fft(fa, false);
+        MyMath::fft(fb, false);
         for (size_t i = 0; i < n; ++i) {
             fa[i] *= fb[i];
         }
-        helping::fft(fa, true);
+
+        MyMath::fft(fa, true);
 
         res.significand.resize(n);
         res.significand.push_back(0);
         res.exponent++;
         for (size_t i = 0; i < n; ++i) {
-            res.significand[i] += (base) (fa[i].real() + 0.5);
+            res.significand[i] += static_cast<long long>(fa[i].real() + 0.5);
             if (res.significand[i] >= 10) {
                 res.significand[i + 1] += res.significand[i] / NUM_SYSTEM;
                 res.significand[i] %= NUM_SYSTEM;
@@ -315,7 +286,7 @@ namespace LargeNumbers {
             return sign > other.sign;
         }
         if (sign == -1) {
-            return -*this < -other;
+            return -other > -*this;
         }
 
         if (significand.size() == 1 && significand[0] == 0 ||
@@ -340,23 +311,17 @@ namespace LargeNumbers {
         return thisSize > otherSize;
     }
 
-    bool LargeNumbers::LargeNumber::operator<(const LargeNumbers::LargeNumber &other) const {
-        return other > *this;
-    }
-
     bool LargeNumbers::LargeNumber::operator==(const LargeNumbers::LargeNumber &other) const {
-        return !(*this > other || *this < other);
+        return (sign == other.sign && exponent == other.exponent && significand == other.significand);
     }
 
-    bool LargeNumbers::LargeNumber::operator>=(const LargeNumbers::LargeNumber &other) const {
-        return !(*this < other);
-    }
-
-    bool LargeNumbers::LargeNumber::operator<=(const LargeNumbers::LargeNumber &other) const {
-        return !(*this > other);
-    }
-
-    bool LargeNumbers::LargeNumber::operator!=(const LargeNumbers::LargeNumber &other) const {
-        return !(*this == other);
+    std::strong_ordering LargeNumber::operator<=>(const LargeNumber &other) const {
+        if (*this == other) {
+            return std::strong_ordering::equal;
+        }
+        if (*this > other) {
+            return std::strong_ordering::greater;
+        }
+        return std::strong_ordering::less;
     }
 }

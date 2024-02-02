@@ -30,7 +30,7 @@ namespace LargeNumbers {
 
         std::string toString() const;
 
-        void setPrec(const long long &);
+        void setPrec(long long);
 
         friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
@@ -46,15 +46,9 @@ namespace LargeNumbers {
 
         bool operator>(const LargeNumber &) const;
 
-        bool operator<(const LargeNumber &) const;
-
         bool operator==(const LargeNumber &) const;
 
-        bool operator>=(const LargeNumber &) const;
-
-        bool operator<=(const LargeNumber &) const;
-
-        bool operator!=(const LargeNumber &) const;
+        std::strong_ordering operator<=>(const LargeNumber &) const;
     };
 
     namespace literals {

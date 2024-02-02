@@ -5,12 +5,12 @@
 using namespace LargeNumbers::literals;
 
 int main() {
-    LargeNumbers::LargeNumber a = 998244353.998244353_LN;
-    LargeNumbers::LargeNumber b = 0.00006789012340000_LN;
+    LargeNumbers::LargeNumber a = 2_LN;
+    LargeNumbers::LargeNumber b = 2_LN;
 
     std::cout << a << std::endl;
     std::cout << b << std::endl;
-    std::cout << (a > b) << std::endl;
+    std::cout << (a < b) << std::endl;
     std::cout << (a < b) << std::endl;
     std::cout << (a == b) << std::endl;
     std::cout << (a != b) << std::endl;
