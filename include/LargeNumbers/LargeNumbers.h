@@ -14,13 +14,19 @@ namespace LargeNumbers {
     private:
         std::vector<base> significand;
         long long exponent;
-        char sign;
+        int sign;
 
         void removeZeros();
 
         bool isEqZero() const;
 
         LargeNumber inverse(long long) const;
+
+//        LargeNumber inverseNewton(long long) const;
+
+        LargeNumber defaultMultiply(const LargeNumber &) const;
+
+        LargeNumber fftMultiply(const LargeNumber &) const;
 
     public:
 
@@ -31,6 +37,9 @@ namespace LargeNumbers {
         std::string toString() const;
 
         void setPrec(long long);
+        LargeNumber getInverse(long long) const;
+
+//        LargeNumber getNewtonInverse(long long) const;
 
         friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
@@ -43,6 +52,14 @@ namespace LargeNumbers {
         LargeNumber operator*(const LargeNumber &) const;
 
         LargeNumber operator/(const LargeNumber &) const;
+
+        LargeNumber operator+=(const LargeNumber &);
+
+        LargeNumber operator-=(const LargeNumber &);
+
+        LargeNumber operator*=(const LargeNumber &);
+
+        LargeNumber operator/=(const LargeNumber &);
 
         bool operator>(const LargeNumber &) const;
 

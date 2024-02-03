@@ -1,23 +1,13 @@
 #include <iostream>
+#include <cassert>
+#include <ctime>
 
 #include "LargeNumbers.h"
 
 using namespace LargeNumbers::literals;
 
-int main() {
-    LargeNumbers::LargeNumber a = 2_LN;
-    LargeNumbers::LargeNumber b = 2_LN;
+typedef LargeNumbers::LargeNumber ln;
 
-    std::cout << a << std::endl;
-    std::cout << b << std::endl;
-    std::cout << (a < b) << std::endl;
-    std::cout << (a < b) << std::endl;
-    std::cout << (a == b) << std::endl;
-    std::cout << (a != b) << std::endl;
-    std::cout << (a >= b) << std::endl;
-    std::cout << (a <= b) << std::endl;
-    std::cout << a + b << std::endl;
-    std::cout << a - b << std::endl;
-    std::cout << a * b << std::endl;
-    std::cout << a / b << std::endl;
+int main() {
+
 }
