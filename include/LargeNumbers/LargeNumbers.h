@@ -7,7 +7,7 @@
 #include <vector>
 #include <string>
 
-typedef int16_t base;
+typedef int32_t base;
 
 namespace LargeNumbers {
 
