@@ -2,22 +2,37 @@
 #include <vector>
 #include <string>
 #include <complex>
+#include <cmath>
 
 #include "MathFunctions.h"
 #include "LargeNumbers.h"
 
 #define NUM_SYSTEM 10
-#define DEFAULT_PREC 10
-#define SIZE_FOR_FFT 1000
+#define SIZE_FOR_FFT (1000 * 1000)
 
 typedef std::complex<double> complex_t;
 using namespace LargeNumbers::literals;
 
+long long defaultPrecision = 100;
+
 namespace LargeNumbers {
+
+    void setGlobalPrecision(long long precision) {
+        defaultPrecision = precision;
+    }
+
+    long long getGlobalPrecision() {
+        return defaultPrecision;
+    }
+
     LargeNumber::LargeNumber() {
         sign = 1;
         exponent = 0;
         significand = std::vector<base>(1, 0);
+    }
+
+    LargeNumber::LargeNumber(long double num) {
+        *this = LargeNumber(std::to_string(num).c_str());
     }
 
     LargeNumber::LargeNumber(const char *line) {
@@ -45,6 +60,60 @@ namespace LargeNumbers {
 
     bool LargeNumber::isEqZero() const {
         return *this == 0_LN || *this == -0_LN;
+    }
+
+    void LargeNumber::setPrecision(long long prec) {
+        long long newSize = exponent + 1 + prec;
+        std::reverse(significand.begin(), significand.end());
+        significand.resize(newSize);
+        std::reverse(significand.begin(), significand.end());
+    }
+
+    void LargeNumber::removeZeros() {
+        while (significand.size() > 1 && significand.back() == 0) {
+            significand.pop_back();
+            exponent--;
+        }
+
+        while (significand.size() > 1 && significand.front() == 0) {
+            significand.erase(significand.begin());
+        }
+    }
+
+    std::string LargeNumber::toString() const {
+        long long size = static_cast<long long> (significand.size());
+        std::string line;
+        if (sign == -1) {
+            line.push_back('-');
+        }
+
+        if (exponent < 0) {
+            line.append("0.");
+            line.append(std::string(-exponent - 1, '0'));
+            for (long long i = size - 1; i >= 0; --i) {
+                line.append(std::to_string(significand[i]));
+            }
+        } else {
+            for (long long i = size - 1; i >= std::min(0LL, size - exponent - 1); --i) {
+                if (i == size - exponent - 2) {
+                    line.push_back('.');
+                }
+                if (i >= 0) {
+                    line.append(std::to_string(significand[i]));
+                } else {
+                    line.push_back('0');
+                }
+            }
+        }
+        return line;
+    }
+
+    LargeNumber LargeNumber::getInverse(long long precision) const {
+        return inverse(precision);
+    }
+
+    long long LargeNumber::getExp() const {
+        return exponent;
     }
 
     LargeNumber LargeNumber::defaultMultiply(const LargeNumber &other) const {
@@ -83,7 +152,7 @@ namespace LargeNumbers {
 
         fa.resize(n);
         fb.resize(n);
-        res.exponent = n / 2 - (firstSize - exponent) + n / 2 - (secondSize - other.exponent) + 1;
+        res.exponent = static_cast<long long>(n) - (firstSize - exponent) - (secondSize - other.exponent) + 1;
 
         MyMath::fft(fa, false);
         MyMath::fft(fb, false);
@@ -97,7 +166,7 @@ namespace LargeNumbers {
         res.significand.push_back(0);
         res.exponent++;
         for (size_t i = 0; i < n; ++i) {
-            res.significand[i] += static_cast<long long>(fa[i].real() + 0.5);
+            res.significand[i] += std::lround(fa[i].real());
             if (res.significand[i] >= 10) {
                 res.significand[i + 1] += res.significand[i] / NUM_SYSTEM;
                 res.significand[i] %= NUM_SYSTEM;
@@ -108,7 +177,7 @@ namespace LargeNumbers {
         return res;
     }
 
-    LargeNumber LargeNumber::inverse(long long prec = DEFAULT_PREC) const {
+    LargeNumber LargeNumber::inverse(long long prec) const {
         if (isEqZero()) {
             throw std::invalid_argument("Dividing by 0");
         }
@@ -122,14 +191,14 @@ namespace LargeNumbers {
 
         LargeNumber res;
         res.sign = sign;
-        res.exponent = - exponent - 1;
+        res.exponent = -exponent - 1;
         res.significand.clear();
 
         while (static_cast<long long> (res.significand.size()) - res.exponent <= prec || res.significand.empty()) {
             prevNum = num;
 
             int curDig = 0;
-            while (denom < num) {
+            while (denom <= num) {
                 curDig++;
                 num = num - denom;
             }
@@ -147,65 +216,41 @@ namespace LargeNumbers {
             }
         }
         std::reverse(res.significand.begin(), res.significand.end());
+        res.removeZeros();
         return res;
     }
 
-//    #todo: reBASE to 2^64, with base 10 too slow
-//    LargeNumber LargeNumber::inverseNewton(long long prec = DEFAULT_PREC) const {
-//        if (isEqZero()) {
-//            throw std::invalid_argument("Dividing by 0");
-//        }
-//
-//        long long iters = sqrt(prec) + 1;
-//        LargeNumber denom = *this;
-//
-//        denom.exponent = -1;
-//        denom.sign = 1;
-//
-//        LargeNumber res = 1_LN;
-//        LargeNumber prevRes = res;
-//
-//
-//
-//        while ((res + 1_LN) * denom < 1_LN) {
-//            res += 1_LN;
-//        }
-//        res = 48_LN / 17_LN - 32_LN / 17_LN * denom;
-//
-//        while (-(res - prevRes).exponent < prec + exponent + 1) {
-//            prevRes = res;
-//            res = res * (2_LN - denom * res);
-//            res.setPrec(prec + exponent + 7);
-//            prevRes.setPrec(prec + exponent + 7);
-//        }
-//
-//        while (iters--) {
-//            res *= 2_LN - denom * res;
-//            res.setPrec(prec + exponent + 1);
-//        }
-//
-//        res.sign = sign;
-//        res.exponent = -exponent - 1;
-//        res.setPrec(prec);
-//        return res;
-//    }
-
-    void LargeNumber::setPrec(long long prec) {
-        long long newSize = exponent + 1 + prec;
-        std::reverse(significand.begin(), significand.end());
-        significand.resize(newSize);
-        std::reverse(significand.begin(), significand.end());
-    }
-
-    void LargeNumber::removeZeros() {
-        while (significand.size() > 1 && significand.back() == 0) {
-            significand.pop_back();
-            exponent--;
+//    todo: needs reBAS(E)ing to 2^64, too slow with BASE 10
+    LargeNumber LargeNumber::inverseNewton(long long precision = defaultPrecision) const {
+        if (isEqZero()) {
+            throw std::invalid_argument("Dividing by 0");
         }
 
-        while (significand.size() > 1 && significand.front() == 0) {
-            significand.erase(significand.begin());
+        LargeNumber denom = *this;
+
+        denom.exponent = -1;
+        denom.sign = 1;
+
+        LargeNumber res = 1_LN;
+        LargeNumber prevRes = res;
+
+        while ((res + 1_LN) * denom < 1_LN) {
+            res += 1_LN;
         }
+
+        while (-(res - prevRes).exponent < precision + exponent + 1) {
+            prevRes = res;
+            LargeNumber mult = 2_LN - denom * res;
+            mult.setPrecision(precision + res.exponent + 7 + exponent);
+            res *= mult;
+            res.setPrecision(precision + exponent + 7);
+            prevRes.setPrecision(precision + exponent + 7);
+        }
+
+        res.sign = sign;
+        res.exponent = -exponent - 1;
+        res.setPrecision(precision);
+        return res;
     }
 
     LargeNumber literals::operator ""_LN(const char *line) {
@@ -215,34 +260,6 @@ namespace LargeNumbers {
     std::ostream &operator<<(std::ostream &stream, const LargeNumber &a) {
         stream << a.toString();
         return stream;
-    }
-
-    std::string LargeNumber::toString() const {
-        long long size = static_cast<long long> (significand.size());
-        std::string line;
-        if (sign == -1) {
-            line.push_back('-');
-        }
-
-        if (exponent < 0) {
-            line.append("0.");
-            line.append(std::string(-exponent - 1, '0'));
-            for (long long i = size - 1; i >= 0; --i) {
-                line.append(std::to_string(significand[i]));
-            }
-        } else {
-            for (long long i = size - 1; i >= std::min(0LL, size - exponent - 1); --i) {
-                if (i == size - exponent - 2) {
-                    line.push_back('.');
-                }
-                if (i >= 0) {
-                    line.append(std::to_string(significand[i]));
-                } else {
-                    line.push_back('0');
-                }
-            }
-        }
-        return line;
     }
 
     LargeNumber LargeNumber::operator-() const {
@@ -338,13 +355,14 @@ namespace LargeNumbers {
             return {};
         }
 
-        if (significand.size() + other.significand.size() < SIZE_FOR_FFT) {
-            return defaultMultiply(other);
-        }
+        LargeNumber res;
 
-        else {
-            return fftMultiply(other);
+        if (significand.size() * other.significand.size() < SIZE_FOR_FFT) {
+            res = defaultMultiply(other);
+        } else {
+            res = fftMultiply(other);
         }
+        return res;
     }
 
     LargeNumber LargeNumber::operator/(const LargeNumber &other) const {
@@ -353,12 +371,10 @@ namespace LargeNumbers {
         }
 
         LargeNumber num = *this;
-        LargeNumber denom_inv = other.inverse(DEFAULT_PREC + exponent + 1);
-
-//        num.setPrec(DEFAULT_PREC + denom_inv.exponent + 1);
+        LargeNumber denom_inv = other.getInverse(getGlobalPrecision() + exponent + 1);
 
         LargeNumber res = num * denom_inv;
-        res.setPrec(DEFAULT_PREC);
+        res.setPrecision(getGlobalPrecision());
         return res;
     }
 
@@ -422,11 +438,32 @@ namespace LargeNumbers {
         return std::strong_ordering::less;
     }
 
-//    LargeNumber LargeNumber::getNewtonInverse(long long prec) const {
-//        return inverseNewton(prec);
-//    }
+    void binarySplit(long long a, long long b, LargeNumber &P, LargeNumber &Q, LargeNumber &R) {
+        if (b == a + 1) {
+            P = LargeNumber(-(6 * a - 5) * (2 * a - 1) * (6 * a - 1));
+            Q = LargeNumber(10939058860032000) * LargeNumber(pow(a, 3));
+            R = P * LargeNumber(545140134 * a + 13591409);
+        } else {
+            long long m = (a + b) / 2;
+            LargeNumber Pl, Ql, Rl;
+            LargeNumber Pr, Qr, Rr;
+            binarySplit(a, m, Pl, Ql, Rl);
+            binarySplit(m, b, Pr, Qr, Rr);
 
-    LargeNumber LargeNumber::getInverse(long long prec) const {
-        return inverse(prec);
+            P = Pl * Pr;
+            Q = Ql * Qr;
+            R = Qr * Rl + Pl * Rr;
+        }
+    }
+
+    LargeNumber getPi(long long int precision) {
+        LargeNumber P, Q, R;
+        binarySplit(1, std::max(precision / 10, static_cast<long long> (2)), P, Q, R);
+        LargeNumber num = LargeNumber(MAGIC_PI_NUM);
+        num.setPrecision(precision + 1);
+        num *= Q;
+        num *= (LargeNumber("13591409") * Q + R).getInverse(precision + num.getExp() + 1);
+        num.setPrecision(precision);
+        return num;
     }
 }

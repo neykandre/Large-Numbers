@@ -7,14 +7,19 @@
 #include <vector>
 #include <string>
 
-typedef long long int base;
+typedef int16_t base;
 
 namespace LargeNumbers {
+
+    void setGlobalPrecision(long long);
+
+    long long getGlobalPrecision();
+
     class LargeNumber {
     private:
-        std::vector<base> significand;
-        long long exponent;
-        int sign;
+        std::vector<base> significand{};
+        long long exponent{};
+        int sign{};
 
         void removeZeros();
 
@@ -22,7 +27,7 @@ namespace LargeNumbers {
 
         LargeNumber inverse(long long) const;
 
-//        LargeNumber inverseNewton(long long) const;
+        LargeNumber inverseNewton(long long) const;
 
         LargeNumber defaultMultiply(const LargeNumber &) const;
 
@@ -32,14 +37,17 @@ namespace LargeNumbers {
 
         LargeNumber();
 
+        explicit LargeNumber(long double);
+
         explicit LargeNumber(const char *);
 
         std::string toString() const;
 
-        void setPrec(long long);
-        LargeNumber getInverse(long long) const;
+        void setPrecision(long long);
 
-//        LargeNumber getNewtonInverse(long long) const;
+        LargeNumber getInverse(long long = getGlobalPrecision()) const;
+
+        long long getExp() const;
 
         friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
@@ -71,4 +79,8 @@ namespace LargeNumbers {
     namespace literals {
         LargeNumber operator ""_LN(const char *);
     }
+
+    void binarySplit(long long, long long, LargeNumber &, LargeNumber &, LargeNumber &);
+
+    LargeNumber getPi(long long = getGlobalPrecision());
 }

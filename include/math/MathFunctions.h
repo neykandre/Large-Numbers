@@ -5,6 +5,7 @@
 
 #include <vector>
 #include <complex>
+#include "MAGIC_NUMS.h"
 
 typedef std::complex<double> complex_t;
 
