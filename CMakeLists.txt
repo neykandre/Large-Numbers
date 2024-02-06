@@ -12,7 +12,5 @@ add_subdirectory(test)
 #TEST
 
 #computingPi
-include_directories(include/LargeNumbers)
-add_executable(computePi compute.cpp)
-target_link_libraries(computePi PUBLIC LargeNumbersLib)
+add_subdirectory(computePi)
 #computingPi

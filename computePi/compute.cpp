@@ -7,7 +7,7 @@ using namespace LargeNumbers::literals;
 
 
 int main() {
-    LargeNumbers::setGlobalPrecision(100);
+    LargeNumbers::setGlobalPrecision(1000);
 
     std::clock_t start = std::clock();
     LargeNumbers::LargeNumber myPi = LargeNumbers::getPi();
