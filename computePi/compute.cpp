@@ -9,7 +9,7 @@ using namespace LargeNumbers::literals;
 
 int main(int argc, char* argv[]) {
     int precision = 100;
-    if (argc > 0) {
+    if (argc > 1) {
         precision = std::stoi(std::string(argv[1]));
     }
     LargeNumbers::setGlobalPrecision(precision);

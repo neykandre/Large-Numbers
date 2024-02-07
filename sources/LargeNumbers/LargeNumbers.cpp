@@ -63,10 +63,13 @@ namespace LargeNumbers {
     }
 
     void LargeNumber::setPrecision(long long prec) {
-        long long newSize = exponent + 1 + prec;
+        long long newSize = std::max(exponent + 1 + prec, 0ll);
         std::reverse(significand.begin(), significand.end());
         significand.resize(newSize);
         std::reverse(significand.begin(), significand.end());
+        if (newSize == 0) {
+            significand.push_back(0);
+        }
     }
 
     void LargeNumber::removeZeros() {
@@ -77,6 +80,10 @@ namespace LargeNumbers {
 
         while (significand.size() > 1 && significand.front() == 0) {
             significand.erase(significand.begin());
+        }
+
+        if (significand.size() == 1 && significand.back() == 0) {
+            exponent = 0;
         }
     }
 
@@ -216,6 +223,7 @@ namespace LargeNumbers {
             }
         }
         std::reverse(res.significand.begin(), res.significand.end());
+        res.setPrecision(prec);
         res.removeZeros();
         return res;
     }
@@ -371,7 +379,7 @@ namespace LargeNumbers {
         }
 
         LargeNumber num = *this;
-        LargeNumber denom_inv = other.getInverse(getGlobalPrecision() + exponent + 1);
+        LargeNumber denom_inv = other.getInverse(getGlobalPrecision() + exponent + 10);
 
         LargeNumber res = num * denom_inv;
         res.setPrecision(getGlobalPrecision());
@@ -395,37 +403,46 @@ namespace LargeNumbers {
     }
 
     bool LargeNumber::operator>(const LargeNumber &other) const {
-        if (sign != other.sign) {
-            return sign > other.sign;
+        LargeNumber first = *this;
+        LargeNumber second = other;
+        first.removeZeros();
+        second.removeZeros();
+
+        if (first.sign != other.sign) {
+            return first.sign > second.sign;
         }
-        if (sign == -1) {
-            return -other > -*this;
+        if (first.sign == -1) {
+            return -second > -*this;
         }
 
-        if (significand.size() == 1 && significand[0] == 0 ||
-            other.significand.size() == 1 && other.significand[0] == 0) {
-            return !(significand.size() == 1 && significand[0] == 0);
+        if (first.significand.size() == 1 && first.significand[0] == 0 ||
+            second.significand.size() == 1 && second.significand[0] == 0) {
+            return !(first.significand.size() == 1 && first.significand[0] == 0);
         }
 
-        if (exponent != other.exponent) {
-            return exponent > other.exponent;
+        if (first.exponent != second.exponent) {
+            return first.exponent > second.exponent;
         }
 
         size_t i = 0;
-        size_t minSize = std::min(significand.size(), other.significand.size());
-        size_t thisSize = significand.size();
-        size_t otherSize = other.significand.size();
+        size_t minSize = std::min(first.significand.size(), second.significand.size());
+        size_t firstSize = first.significand.size();
+        size_t secondSize = second.significand.size();
         for (; i < minSize; ++i) {
-            if (significand[thisSize - 1 - i] != other.significand[otherSize - 1 - i]) {
-                return significand[thisSize - 1 - i] > other.significand[otherSize - 1 - i];
+            if (first.significand[firstSize - 1 - i] != second.significand[secondSize - 1 - i]) {
+                return first.significand[firstSize - 1 - i] > second.significand[secondSize - 1 - i];
             }
         }
 
-        return thisSize > otherSize;
+        return firstSize > secondSize;
     }
 
     bool LargeNumbers::LargeNumber::operator==(const LargeNumbers::LargeNumber &other) const {
-        return (sign == other.sign && exponent == other.exponent && significand == other.significand);
+        LargeNumber first = *this;
+        LargeNumber second = other;
+        first.removeZeros();
+        second.removeZeros();
+        return (first.sign == second.sign && first.exponent == second.exponent && first.significand == second.significand);
     }
 
     std::strong_ordering LargeNumber::operator<=>(const LargeNumber &other) const {
