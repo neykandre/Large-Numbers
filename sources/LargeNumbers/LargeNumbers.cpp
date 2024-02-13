@@ -126,10 +126,6 @@ namespace LargeNumbers {
         return line;
     }
 
-    LargeNumber LargeNumber::getInverse(long long precision) const {
-        return inverse(precision);
-    }
-
     long long LargeNumber::getExp() const {
         return exponent;
     }
@@ -195,50 +191,6 @@ namespace LargeNumbers {
             }
         }
 
-        res.removeZeros();
-        return res;
-    }
-
-    LargeNumber LargeNumber::inverse(long long prec) const {
-        if (isEqZero()) {
-            throw std::invalid_argument("Dividing by 0");
-        }
-
-        LargeNumber num = 1_LN;
-        LargeNumber denom = *this;
-        denom.sign = 1;
-        LargeNumber prevNum;
-
-        denom.exponent = -1;
-
-        LargeNumber res;
-        res.sign = sign;
-        res.exponent = -exponent - 1;
-        res.significand.clear();
-
-        while (static_cast<long long> (res.significand.size()) - res.exponent <= prec || res.significand.empty()) {
-            prevNum = num;
-
-            int curDig = 0;
-            while (denom <= num) {
-                curDig++;
-                num = num - denom;
-            }
-            res.significand.push_back(curDig);
-            num.exponent++;
-
-            if (num == prevNum && curDig == 9) {
-                res.significand.pop_back();
-                if (!res.significand.empty()) {
-                    res.significand.pop_back();
-                }
-                res.significand.push_back(1);
-                res.exponent++;
-                break;
-            }
-        }
-        std::reverse(res.significand.begin(), res.significand.end());
-        res.setPrecision(prec);
         res.removeZeros();
         return res;
     }
@@ -360,10 +312,34 @@ namespace LargeNumbers {
         }
 
         LargeNumber num = *this;
-        LargeNumber denom_inv = other.getInverse(getGlobalPrecision() + exponent + 10);
+        LargeNumber denom = other;
+        LargeNumber res;
+        res.sign = num.sign * denom.sign;
+        res.significand.clear();
+        res.exponent = num.exponent - denom.exponent;
+        num.sign = 1;
+        denom.sign = 1;
+        num.exponent = denom.exponent;
 
-        LargeNumber res = num * denom_inv;
-        res.setPrecision(getGlobalPrecision());
+        while (res.getPrecision() < defaultPrecision && !num.isEqZero()) {
+            int curDig = 0;
+            while (num >= denom) {
+                curDig++;
+                num -= denom;
+            }
+            if (curDig == 10) {
+                if (!res.significand.empty()) {
+                    res.significand.back()++;
+                }
+                else {
+                    res.significand.push_back(1);
+                }
+            }
+            res.significand.push_back(curDig);
+            num.exponent++;
+        }
+        std::reverse(res.significand.begin(), res.significand.end());
+        res.removeZeros();
         return res;
     }
 
