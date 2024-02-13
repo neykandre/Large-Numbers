@@ -59,16 +59,24 @@ namespace LargeNumbers {
     }
 
     bool LargeNumber::isEqZero() const {
-        return *this == 0_LN || *this == -0_LN;
+        for (auto &x: significand) {
+            if (x != 0) {
+                return false;
+            }
+        }
+        return true;
     }
 
-    void LargeNumber::setPrecision(long long prec) {
-        long long newSize = std::max(exponent + 1 + prec, 0ll);
-        std::reverse(significand.begin(), significand.end());
-        significand.resize(newSize);
-        std::reverse(significand.begin(), significand.end());
-        if (newSize == 0) {
-            significand.push_back(0);
+    void LargeNumber::setPrecision(long long precision) {
+        if (precision < getPrecision()) {
+            long long newSize = std::max(exponent + 1 + precision, 0ll);
+            std::reverse(significand.begin(), significand.end());
+            significand.resize(newSize);
+            std::reverse(significand.begin(), significand.end());
+            if (newSize == 0) {
+                significand.push_back(0);
+            }
+            removeZeros();
         }
     }
 
@@ -84,6 +92,9 @@ namespace LargeNumbers {
 
         if (significand.size() == 1 && significand.back() == 0) {
             exponent = 0;
+        }
+        if (isEqZero()) {
+            sign = 1;
         }
     }
 
@@ -121,6 +132,10 @@ namespace LargeNumbers {
 
     long long LargeNumber::getExp() const {
         return exponent;
+    }
+
+    long long LargeNumber::getPrecision() const {
+        return static_cast<long long>(significand.size()) - exponent - 1;
     }
 
     LargeNumber LargeNumber::defaultMultiply(const LargeNumber &other) const {
@@ -228,39 +243,6 @@ namespace LargeNumbers {
         return res;
     }
 
-//    todo: needs reBAS(E)ing to 2^64, too slow with BASE 10
-    LargeNumber LargeNumber::inverseNewton(long long precision = defaultPrecision) const {
-        if (isEqZero()) {
-            throw std::invalid_argument("Dividing by 0");
-        }
-
-        LargeNumber denom = *this;
-
-        denom.exponent = -1;
-        denom.sign = 1;
-
-        LargeNumber res = 1_LN;
-        LargeNumber prevRes = res;
-
-        while ((res + 1_LN) * denom < 1_LN) {
-            res += 1_LN;
-        }
-
-        while (-(res - prevRes).exponent < precision + exponent + 1) {
-            prevRes = res;
-            LargeNumber mult = 2_LN - denom * res;
-            mult.setPrecision(precision + res.exponent + 7 + exponent);
-            res *= mult;
-            res.setPrecision(precision + exponent + 7);
-            prevRes.setPrecision(precision + exponent + 7);
-        }
-
-        res.sign = sign;
-        res.exponent = -exponent - 1;
-        res.setPrecision(precision);
-        return res;
-    }
-
     LargeNumber literals::operator ""_LN(const char *line) {
         return LargeNumber(line);
     }
@@ -364,7 +346,6 @@ namespace LargeNumbers {
         }
 
         LargeNumber res;
-
         if (significand.size() * other.significand.size() < SIZE_FOR_FFT) {
             res = defaultMultiply(other);
         } else {
@@ -403,46 +384,43 @@ namespace LargeNumbers {
     }
 
     bool LargeNumber::operator>(const LargeNumber &other) const {
-        LargeNumber first = *this;
-        LargeNumber second = other;
-        first.removeZeros();
-        second.removeZeros();
-
-        if (first.sign != other.sign) {
-            return first.sign > second.sign;
+        if (isEqZero() && other.isEqZero()) {
+            return false;
         }
-        if (first.sign == -1) {
-            return -second > -*this;
+        if (isEqZero()) {
+            return other.sign == -1;
+        }
+        if (other.isEqZero()) {
+            return sign == 1;
         }
 
-        if (first.significand.size() == 1 && first.significand[0] == 0 ||
-            second.significand.size() == 1 && second.significand[0] == 0) {
-            return !(first.significand.size() == 1 && first.significand[0] == 0);
+        if (sign != other.sign) {
+            return sign > other.sign;
+        }
+        if (sign == -1) {
+            return -other > -*this;
         }
 
-        if (first.exponent != second.exponent) {
-            return first.exponent > second.exponent;
+        if (exponent != other.exponent) {
+            return exponent > other.exponent;
         }
 
-        size_t i = 0;
-        size_t minSize = std::min(first.significand.size(), second.significand.size());
-        size_t firstSize = first.significand.size();
-        size_t secondSize = second.significand.size();
-        for (; i < minSize; ++i) {
-            if (first.significand[firstSize - 1 - i] != second.significand[secondSize - 1 - i]) {
-                return first.significand[firstSize - 1 - i] > second.significand[secondSize - 1 - i];
+        size_t minSize = std::min(significand.size(), other.significand.size());
+        size_t firstSize = significand.size();
+        size_t secondSize = other.significand.size();
+        for (size_t i = 0; i < minSize; ++i) {
+            if (significand[firstSize - 1 - i] != other.significand[secondSize - 1 - i]) {
+                return significand[firstSize - 1 - i] > other.significand[secondSize - 1 - i];
             }
         }
-
         return firstSize > secondSize;
     }
 
     bool LargeNumbers::LargeNumber::operator==(const LargeNumbers::LargeNumber &other) const {
-        LargeNumber first = *this;
-        LargeNumber second = other;
-        first.removeZeros();
-        second.removeZeros();
-        return (first.sign == second.sign && first.exponent == second.exponent && first.significand == second.significand);
+        if (isEqZero() && other.isEqZero()) {
+            return true;
+        }
+        return (sign == other.sign && exponent == other.exponent && significand == other.significand);
     }
 
     std::strong_ordering LargeNumber::operator<=>(const LargeNumber &other) const {
@@ -453,34 +431,5 @@ namespace LargeNumbers {
             return std::strong_ordering::greater;
         }
         return std::strong_ordering::less;
-    }
-
-    void binarySplit(long long a, long long b, LargeNumber &P, LargeNumber &Q, LargeNumber &R) {
-        if (b == a + 1) {
-            P = LargeNumber(-(6 * a - 5) * (2 * a - 1) * (6 * a - 1));
-            Q = LargeNumber(10939058860032000) * LargeNumber(pow(a, 3));
-            R = P * LargeNumber(545140134 * a + 13591409);
-        } else {
-            long long m = (a + b) / 2;
-            LargeNumber Pl, Ql, Rl;
-            LargeNumber Pr, Qr, Rr;
-            binarySplit(a, m, Pl, Ql, Rl);
-            binarySplit(m, b, Pr, Qr, Rr);
-
-            P = Pl * Pr;
-            Q = Ql * Qr;
-            R = Qr * Rl + Pl * Rr;
-        }
-    }
-
-    LargeNumber getPi(long long int precision) {
-        LargeNumber P, Q, R;
-        binarySplit(1, std::max(precision / 10, static_cast<long long> (2)), P, Q, R);
-        LargeNumber num = LargeNumber(MAGIC_PI_NUM);
-        num.setPrecision(precision + 1);
-        num *= Q;
-        num *= (LargeNumber("13591409") * Q + R).getInverse(precision + num.getExp() + 1);
-        num.setPrecision(precision);
-        return num;
     }
 }

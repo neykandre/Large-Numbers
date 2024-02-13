@@ -28,3 +28,9 @@ include(GoogleTest)
 gtest_discover_tests(MyTests)
 
 include_directories(../include/LargeNumbers)
+
+#add_executable(sandbox sandbox.cpp)
+#target_link_libraries(
+#        sandbox
+#        LargeNumbersLib
+#)

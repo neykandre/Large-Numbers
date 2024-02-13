@@ -27,8 +27,6 @@ namespace LargeNumbers {
 
         LargeNumber inverse(long long) const;
 
-        LargeNumber inverseNewton(long long) const;
-
         LargeNumber defaultMultiply(const LargeNumber &) const;
 
         LargeNumber fftMultiply(const LargeNumber &) const;
@@ -48,6 +46,8 @@ namespace LargeNumbers {
         LargeNumber getInverse(long long = getGlobalPrecision()) const;
 
         long long getExp() const;
+
+        long long getPrecision() const;
 
         friend std::ostream &operator<<(std::ostream &, const LargeNumber &);
 
@@ -79,8 +79,4 @@ namespace LargeNumbers {
     namespace literals {
         LargeNumber operator ""_LN(const char *);
     }
-
-    void binarySplit(long long, long long, LargeNumber &, LargeNumber &, LargeNumber &);
-
-    LargeNumber getPi(long long = getGlobalPrecision());
 }

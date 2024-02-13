@@ -5,7 +5,7 @@
 
 typedef std::complex<double> complex_t;
 
-const double PI_2 = 2 * acos(-1);
+const double TAU = 2 * acos(-1);
 
 namespace MyMath {
     void fft(std::vector<complex_t> &a, bool invert) {
@@ -21,7 +21,7 @@ namespace MyMath {
             fft(a0, invert);
             fft(a1, invert);
 
-            double ang = PI_2 / size * (invert ? -1 : 1);
+            double ang = TAU / size * (invert ? -1 : 1);
             complex_t w(1);
             complex_t wn(std::polar(1., ang));
 

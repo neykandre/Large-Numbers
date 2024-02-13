@@ -5308,3 +5308,58 @@ TEST(Methods, getInverse21_3) {
 	LargeNumbers::LargeNumber a = -6840515649.060211_LN;
 	EXPECT_EQ(a.getInverse(80), -0.00000000014618780970662433840004134488905620082485174022180427174248321685172908_LN);
 }
+
+TEST(Comparisions, Zeros0) {
+    LargeNumbers::LargeNumber a = 0_LN;
+    LargeNumbers::LargeNumber b = -0_LN;
+    EXPECT_EQ(a < b, false);
+    EXPECT_EQ(a > b, false);
+    EXPECT_EQ(a == b, true);
+    EXPECT_EQ(a <= b, true);
+    EXPECT_EQ(a >= b, true);
+}
+
+TEST(Operations, ZerosMult) {
+    EXPECT_EQ(0_LN * (-0_LN), 0_LN);
+    EXPECT_EQ((-0_LN) * (-0_LN), 0_LN);
+    EXPECT_EQ(0_LN * 0_LN, 0_LN);
+}
+
+TEST(Operations, ZerosPlusMinus) {
+    LargeNumbers::LargeNumber a = 1_LN;
+    LargeNumbers::LargeNumber b = 0_LN;
+    EXPECT_EQ(a - b, 1_LN);
+    EXPECT_EQ(a + b, 1_LN);
+    EXPECT_EQ(b - a, -1_LN);
+    EXPECT_EQ(-a - b, -1_LN);
+}
+
+TEST(Operations, MultNine) {
+    EXPECT_EQ(9.9_LN * 10_LN, 99_LN);
+    EXPECT_EQ(9.99_LN * 10_LN, 99.9_LN);
+}
+
+TEST(Operations, PlusMinusNine) {
+    EXPECT_EQ(999.999_LN + 0.001_LN, 1000_LN);
+    EXPECT_EQ(10000_LN - 0.00001_LN, 9999.99999_LN);
+}
+
+TEST(Opearations, DivisionFun) {
+    EXPECT_EQ(9.9_LN / 10_LN, 0.99_LN);
+    EXPECT_EQ(10_LN / 2_LN, 5_LN);
+    EXPECT_EQ(1_LN / 10_LN, 0.1_LN);
+    EXPECT_EQ(1000_LN / 10_LN, 100_LN);
+    EXPECT_EQ(1919_LN / 1919_LN, 1_LN);
+}
+
+// 0 < -0
+// 0 * -0
+// 1 - 0
+// - 1 - 0
+// 9.9 * 10 = 99.0 || 99
+// 9.99 * 10
+// 99.99 + 0.01
+// -0 == 0
+// 9.9 / 10 = 0.99
+// 1 / 10
+//
