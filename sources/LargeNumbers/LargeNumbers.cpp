@@ -322,12 +322,26 @@ namespace LargeNumbers {
         num.exponent = denom.exponent;
 
         while (res.getPrecision() < defaultPrecision && !num.isEqZero()) {
-            int curDig = 0;
-            while (num >= denom) {
-                curDig++;
-                num -= denom;
+            int curDigL = 0;
+            int curDigR = 11;
+            int curDigM;
+            LargeNumber temp;
+            while (curDigR - curDigL > 1) {
+                curDigM = (curDigL + curDigR) / 2;
+                temp = denom * LargeNumber(curDigM);
+                if (temp == num) {
+                    curDigL = curDigM;
+                    break;
+                }
+                if (temp > num) {
+                    curDigR = curDigM;
+                }
+                else {
+                    curDigL = curDigM;
+                }
             }
-            if (curDig == 10) {
+            num -= denom * LargeNumber(curDigL);
+            if (curDigL == 10) {
                 if (!res.significand.empty()) {
                     res.significand.back()++;
                 }
@@ -335,7 +349,7 @@ namespace LargeNumbers {
                     res.significand.push_back(1);
                 }
             }
-            res.significand.push_back(curDig);
+            res.significand.push_back(curDigL);
             num.exponent++;
         }
         std::reverse(res.significand.begin(), res.significand.end());
