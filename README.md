@@ -48,4 +48,4 @@ Number of decimal places:
 - 100 - 0.65 ms
 - 1000 - 59 ms
 - 2000 - 240 ms
-- 5000 - 1400 ms
+- 4998 - 1350 ms
