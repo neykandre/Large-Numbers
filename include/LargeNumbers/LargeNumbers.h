@@ -25,6 +25,8 @@ namespace LargeNumbers {
 
         bool isEqZero() const;
 
+        LargeNumber inverse(long long) const;
+
         LargeNumber defaultMultiply(const LargeNumber &) const;
 
         LargeNumber fftMultiply(const LargeNumber &) const;
@@ -40,6 +42,8 @@ namespace LargeNumbers {
         std::string toString() const;
 
         void setPrecision(long long);
+
+        LargeNumber getInverse(long long = getGlobalPrecision()) const;
 
         long long getExp() const;
 

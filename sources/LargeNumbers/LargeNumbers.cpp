@@ -126,6 +126,10 @@ namespace LargeNumbers {
         return line;
     }
 
+    LargeNumber LargeNumber::getInverse(long long precision) const {
+        return inverse(precision);
+    }
+
     long long LargeNumber::getExp() const {
         return exponent;
     }
@@ -191,6 +195,40 @@ namespace LargeNumbers {
             }
         }
 
+        res.removeZeros();
+        return res;
+    }
+
+    LargeNumber LargeNumber::inverse(long long prec) const {
+        if (isEqZero()) {
+            throw std::invalid_argument("Dividing by 0");
+        }
+
+        LargeNumber num = 1_LN;
+        LargeNumber denom = *this;
+        denom.sign = 1;
+        LargeNumber prevNum;
+
+        denom.exponent = -1;
+
+        LargeNumber res;
+        res.sign = sign;
+        res.exponent = -exponent - 1;
+        res.significand.clear();
+
+        while (static_cast<long long> (res.significand.size()) - res.exponent <= prec || res.significand.empty()) {
+            prevNum = num;
+
+            int curDig = 0;
+            while (denom <= num) {
+                curDig++;
+                num = num - denom;
+            }
+            res.significand.push_back(curDig);
+            num.exponent++;
+        }
+        std::reverse(res.significand.begin(), res.significand.end());
+        res.setPrecision(prec);
         res.removeZeros();
         return res;
     }
@@ -322,34 +360,12 @@ namespace LargeNumbers {
         num.exponent = denom.exponent;
 
         while (res.getPrecision() < defaultPrecision && !num.isEqZero()) {
-            int curDigL = 0;
-            int curDigR = 11;
-            int curDigM;
-            LargeNumber temp;
-            while (curDigR - curDigL > 1) {
-                curDigM = (curDigL + curDigR) / 2;
-                temp = denom * LargeNumber(curDigM);
-                if (temp == num) {
-                    curDigL = curDigM;
-                    break;
-                }
-                if (temp > num) {
-                    curDigR = curDigM;
-                }
-                else {
-                    curDigL = curDigM;
-                }
+            int curDig = 0;
+            while (num >= denom) {
+                curDig++;
+                num -= denom;
             }
-            num -= denom * LargeNumber(curDigL);
-            if (curDigL == 10) {
-                if (!res.significand.empty()) {
-                    res.significand.back()++;
-                }
-                else {
-                    res.significand.push_back(1);
-                }
-            }
-            res.significand.push_back(curDigL);
+            res.significand.push_back(curDig);
             num.exponent++;
         }
         std::reverse(res.significand.begin(), res.significand.end());
