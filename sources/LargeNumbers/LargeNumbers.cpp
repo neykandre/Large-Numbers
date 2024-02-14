@@ -207,7 +207,6 @@ namespace LargeNumbers {
         LargeNumber num = 1_LN;
         LargeNumber denom = *this;
         denom.sign = 1;
-        LargeNumber prevNum;
 
         denom.exponent = -1;
 
@@ -217,8 +216,6 @@ namespace LargeNumbers {
         res.significand.clear();
 
         while (static_cast<long long> (res.significand.size()) - res.exponent <= prec || res.significand.empty()) {
-            prevNum = num;
-
             int curDig = 0;
             while (denom <= num) {
                 curDig++;
