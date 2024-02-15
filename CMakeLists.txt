@@ -3,14 +3,6 @@ project(LargeNumbers)
 
 set(CMAKE_CXX_STANDARD 20)
 
-#library
-add_subdirectory(sources)
-#library
+add_subdirectory(LargeNumbers)
 
-#TEST
-add_subdirectory(test)
-#TEST
-
-#computingPi
 add_subdirectory(computePi)
-#computingPi

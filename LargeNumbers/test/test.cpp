@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "LargeNumbers.h"
+#include "../include/LargeNumbers.h"
 
 using LargeNumbers::literals::operator ""_LN;
 
@@ -5443,4 +5443,8 @@ TEST(Operations, LongMult) {
                                                  "4486943477034846759437335713425536098939758048057014893447481461996212"
                                                  "60166168212890625");
     EXPECT_EQ(a * b, c);
+}
+
+TEST(Operations, divisionThrow) {
+    EXPECT_ANY_THROW(34567831_LN / 0_LN);
 }

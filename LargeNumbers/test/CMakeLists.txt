@@ -27,4 +27,4 @@ target_link_libraries(
 include(GoogleTest)
 gtest_discover_tests(MyTests)
 
-include_directories(../include/LargeNumbers)
+include_directories(../include)

@@ -3,6 +3,6 @@ project(LargeNumbers)
 
 set(CMAKE_CXX_STANDARD 20)
 
-include_directories(../../include/math)
+include_directories(include)
 
-add_library(MyMath MathFunctions.cpp)
+add_library(MyMath sources/MathFunctions.cpp)

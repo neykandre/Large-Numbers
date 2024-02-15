@@ -3,7 +3,8 @@
 #include <string>
 #include <cmath>
 
-#include <MagicNums.h>
+#include "MagicNums.h"
+#include "MathFunctions.h"
 #include "LargeNumbers.h"
 
 using namespace LargeNumbers::literals;
@@ -12,7 +13,7 @@ using namespace LargeNumbers::literals;
 void binarySplit(long long a, long long b, LargeNumbers::LargeNumber &P, LargeNumbers::LargeNumber &Q,
                  LargeNumbers::LargeNumber &R) {
     if (b == a + 1) {
-        P = LargeNumbers::LargeNumber(-(6 * a - 5) * (2 * a - 1) * (6 * a - 1));
+        P = LargeNumbers::LargeNumber(-(6 * a - 1) * (2 * a - 1) * (6 * a - 5));
         Q = LargeNumbers::LargeNumber(10939058860032000) * LargeNumbers::LargeNumber(pow(a, 3));
         R = P * LargeNumbers::LargeNumber(545140134 * a + 13591409);
     } else {
@@ -21,7 +22,6 @@ void binarySplit(long long a, long long b, LargeNumbers::LargeNumber &P, LargeNu
         LargeNumbers::LargeNumber Pr, Qr, Rr;
         binarySplit(a, m, Pl, Ql, Rl);
         binarySplit(m, b, Pr, Qr, Rr);
-
         P = Pl * Pr;
         Q = Ql * Qr;
         R = Qr * Rl + Pl * Rr;
